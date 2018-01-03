@@ -4,4 +4,5 @@ This repository contains assorted little programming challenges, mostly written 
 
 ## Code Sample Index
 
--  **RESTful-Endpoints:** A .NET Core console application that shows how to read and post to RESTful endpoints using JSON. 
+- **JSON-Deserialization**: A .NET Core console application that shows how to deserialize JSON using DataContract and Generics.
+- **RESTful-Endpoints:** A .NET Core console application that shows how to read and post to RESTful endpoints using HttpClient. 
