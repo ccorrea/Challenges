@@ -44,9 +44,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Address.cs" />
+    <Compile Include="ComparisonResults.cs" />
     <Compile Include="ModelService.cs" />
     <Compile Include="ModelDifference.cs" />
     <Compile Include="Person.cs" />
+    <Compile Include="Pet.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

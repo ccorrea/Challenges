@@ -23,5 +23,8 @@ namespace Reflection
 
         [DataMember]
         public bool IsSuperHero { get; set; }
+
+        [DataMember]
+        public Pet[] Pets { get; set; }
     }
 }

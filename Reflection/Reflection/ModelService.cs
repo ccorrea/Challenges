@@ -33,35 +33,19 @@ namespace Reflection
                 return Convert.ToBase64String(hashAlgorithm.Hash);
             }
         }
-
-        private class ComparisonResults
+        
+        public List<ModelDifference> GetPropertiesOfDifferentValue(T objectOne, T objectTwo)
         {
-            public List<ModelDifference> PropertiesOfDifferentValue { get; private set; }
-            public List<string> PropertiesOfEqualValue { get; private set; }
-            
+            var comparisonResults = CompareObjects(objectOne, objectTwo);
 
-            public ComparisonResults()
-            {
-                PropertiesOfDifferentValue = new List<ModelDifference>();
-                PropertiesOfEqualValue = new List<string>();
-            }
+            return comparisonResults.PropertiesOfDifferentValue;
+        }
 
-            public void AddDifferentResult(string propertyName, object valueOne, object valueTwo)
-            {
-                var modelDifference = new ModelDifference
-                {
-                    PropertyName = propertyName, 
-                    ValueOne = valueOne,
-                    ValueTwo = valueTwo
-                };
+        public List<string> GetPropertiesOfEqualValue(T objectOne, T objectTwo)
+        {
+            var comparisonResults = CompareObjects(objectOne, objectTwo);
 
-                PropertiesOfDifferentValue.Add(modelDifference);
-            }
-
-            public void AddEqualResult(string propertyName)
-            {
-                PropertiesOfEqualValue.Add(propertyName);
-            }
+            return comparisonResults.PropertiesOfEqualValue;
         }
 
         private ComparisonResults CompareObjects(T objectOne, T objectTwo)
@@ -90,8 +74,6 @@ namespace Reflection
                 }
                 else
                 {
-                    var isArray = propertyType.IsArray;
-                    var isString = propertyType.Equals(typeof(string));
                     var bothAreNull = (propertyValueOne == null) && (propertyValueTwo == null);
                     var bothAreNotNull = (propertyValueOne != null) && (propertyValueTwo != null);
                     var onlyOneIsNull = (propertyValueOne == null) ^ (propertyValueTwo == null);
@@ -104,11 +86,29 @@ namespace Reflection
 
                     if (bothAreNotNull)
                     {
+                        var isString = propertyType.Equals(typeof(string));
+                        var enumerableTypeName = typeof(IEnumerable<>).FullName;
+                        var propertyInterface = propertyType.GetInterface(enumerableTypeName);
+                        var isEnumerable = propertyInterface != null;
+                        
                         if (isString)
                         {
                             if (propertyValueOne.Equals(propertyValueTwo))
                             {
                                 comparisonResults.AddEqualResult(property.Name);
+                            }
+                            else
+                            {
+                                comparisonResults.AddDifferentResult(property.Name, propertyValueOne, propertyValueTwo);
+                            }
+                        }
+                        else if (isEnumerable)
+                        {
+                            var areEqual = Enumerable.SequenceEqual(propertyValueOne, propertyValueTwo);
+
+                            if (areEqual)
+                            {
+                                comparisonResults.PropertiesOfEqualValue.Add(property.Name);
                             }
                             else
                             {
@@ -138,20 +138,6 @@ namespace Reflection
             }
 
             return comparisonResults;
-        }
-
-        public List<ModelDifference> GetPropertiesOfDifferentValue(T objectOne, T objectTwo)
-        {
-            var comparisonResults = CompareObjects(objectOne, objectTwo);
-
-            return comparisonResults.PropertiesOfDifferentValue;
-        }
-
-        public List<string> GetPropertiesOfEqualValue(T objectOne, T objectTwo)
-        {
-            var comparisonResults = CompareObjects(objectOne, objectTwo);
-
-            return comparisonResults.PropertiesOfEqualValue;
         }
     }
 }

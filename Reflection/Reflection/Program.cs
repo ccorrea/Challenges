@@ -6,6 +6,8 @@ namespace Reflection
 {
     class Program
     {
+        #region Sample People
+
         static public Person[] People
         {
             get
@@ -25,6 +27,7 @@ namespace Reflection
                         Address = Places[0],
                         DateOfBirth = DateTime.Parse("1995-04-01"),
                         IsSuperHero = true,
+                        Pets = new[] { Pets[0], Pets[1] },
                     },
                     new Person
                     {
@@ -32,7 +35,8 @@ namespace Reflection
                         LastName = "Allen",
                         Address = Places[0],
                         DateOfBirth = DateTime.Parse("1995-02-01"),
-                        IsSuperHero = false
+                        IsSuperHero = false,
+                        Pets = new[] { Pets[0], Pets[1] },
                     },
                     new Person
                     {
@@ -48,11 +52,16 @@ namespace Reflection
                         LastName = "Diggle",
                         Address = Places[2],
                         DateOfBirth = DateTime.Parse("1975-12-01"),
-                        IsSuperHero = false
+                        IsSuperHero = false,
+                        Pets = new[] { Pets[2] },
                     },
                 };
             }
         }
+
+        #endregion
+
+        #region Sample Places
 
         static public Address[] Places
         {
@@ -82,29 +91,38 @@ namespace Reflection
             }
         }
 
+        #endregion
+
+        #region Sample Pets
+
+        static public Pet[] Pets
+        {
+            get
+            {
+                return new Pet[]
+                {
+                    new Pet { Name = "Bolt", Age = 2, PetType = "Dog" },
+                    new Pet { Name = "Dash", Age = 3, PetType = "Cat" },
+                    new Pet { Name = "Fido", Age = 4, PetType = "Dog" },
+                };
+            }
+        }
+
+        #endregion
+        
         static void Main(string[] args)
         {
-            var shaServiceProvider = new SHA1CryptoServiceProvider();
-            var shaModelService = new ModelService<Person, SHA1>();
+            var cryptoProviderOne = new SHA1CryptoServiceProvider();
+            var modelServiceOne = new ModelService<Person, SHA1>();
             
-            Console.WriteLine("*** EXAMPLE 1: Persons 0 and 1 have the same last name and address, everything else is different ***");
-            
-            WriteComparisonResults(shaModelService, People[0], People[1]);
+            WriteComparisonResults(modelServiceOne, People, 0, 1);
+            WriteComparisonResults(modelServiceOne, People, 2, 3);
 
-            Console.WriteLine("*** EXAMPLE 2: Persons 2 and 3 have the same middle name and birth date, everything else is different ***");
+            var modelServiceTwo = new ModelService<Person, MD5>();
+            var cryptoProviderTwo = new MD5CryptoServiceProvider();
 
-            WriteComparisonResults(shaModelService, People[2], People[3]);
-
-            Console.WriteLine("*** EXAMPLE 3: SHA1 cryptographic hashes for all objects are:");
-
-            WriteCryptographicHashes(person => shaModelService.GetCryptographicHash(person, shaServiceProvider));
-
-            Console.WriteLine("*** EXAMPLE 4: MD5 cryptographic hashes for all objects are:");
-
-            var md5ServiceProvider = new MD5CryptoServiceProvider();
-            var md5ModelService = new ModelService<Person, MD5>();
-
-            WriteCryptographicHashes(person => md5ModelService.GetCryptographicHash(person, md5ServiceProvider));
+            WriteCryptographicHashes(People, modelServiceOne, cryptoProviderOne);
+            WriteCryptographicHashes(People, modelServiceTwo, cryptoProviderTwo);
 
             Console.WriteLine("Press any key.");
             Console.ReadKey();
@@ -115,12 +133,15 @@ namespace Reflection
             return value ?? "NULL";
         }
 
-        private static void WriteComparisonResults(ModelService<Person, SHA1> modelService, Person personOne, Person personTwo)
+        private static void WriteComparisonResults(ModelService<Person, SHA1> modelService, Person[] people, int indexOne, int indexTwo)
         {
+            var personOne = people[indexOne];
+            var personTwo = people[indexTwo];
             var equalPropertyNames = modelService.GetPropertiesOfEqualValue(personOne, personTwo);
             var modelDifferences = modelService.GetPropertiesOfDifferentValue(personOne, personTwo);
-            
-            Console.WriteLine("Properties with equal value: {0}", string.Join(", ", equalPropertyNames));
+            var equalPropertiesListed = string.Join(", ", equalPropertyNames);
+
+            Console.WriteLine("*** Persons {0} and {1} have the same {2}. ***", indexOne, indexTwo, equalPropertiesListed);
 
             foreach (var difference in modelDifferences)
             {
@@ -130,11 +151,17 @@ namespace Reflection
             Console.WriteLine();
         }
 
-        private static void WriteCryptographicHashes(Func<Person, string> hashFunction)
+        private static void WriteCryptographicHashes<H>(IEnumerable<Person> people, ModelService<Person, H> modelService, H hashAlgorithm)
+            where H : HashAlgorithm
         {
-            foreach (var person in People)
+            var algorithmType = hashAlgorithm.GetType();
+            var algorithmName = algorithmType.Name;
+
+            Console.WriteLine("*** Cryptographic hashes by {0} ***", algorithmName);
+
+            foreach (var person in people)
             {
-                Console.WriteLine(hashFunction(person));
+                Console.WriteLine(modelService.GetCryptographicHash(person, hashAlgorithm));
             }
 
             Console.WriteLine();
