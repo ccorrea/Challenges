@@ -5,4 +5,5 @@ This repository contains assorted little programming challenges, mostly written 
 ## Code Sample Index
 
 - **JSON-Deserialization**: A .NET Core console application that shows how to deserialize JSON using DataContract and Generics.
+- **Reflection**: A .NET Framework console application that shows how compare object properties using Reflection. 
 - **RESTful-Endpoints:** A .NET Core console application that shows how to read and post to RESTful endpoints using HttpClient. 
