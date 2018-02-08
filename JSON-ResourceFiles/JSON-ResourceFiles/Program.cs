@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Json;
-using System.Text;
 
 namespace JSON_ResourceFiles
 {
@@ -23,15 +21,31 @@ namespace JSON_ResourceFiles
                 EndProgram("{0} mascots file not found. Program will now exit.", mascotsFilePath);
             }
 
-            var mascotsDictionary = InitializeDictionary(mascotsFilePath);
+            var mascotsDictionary = new Dictionary<string, string>();
+
+            try
+            {
+                mascotsDictionary = InitializeDictionary(mascotsFilePath);
+            }
+            catch (Exception exception)
+            {
+                EndProgram(exception.Message);
+            }
+
+            if (mascotsDictionary.Count.Equals(0))
+            {
+                EndProgram("{0} mascots file contains no data. Program will now exit.");
+            }
+
+            var mascotsFileName = Path.GetFileName(mascotsFilePath);
             bool nameFound = false;
             var teamNames = mascotsDictionary.Keys.ToArray();
 
             while (!nameFound)
             {
                 var randomTeamName = GetRandomElement(teamNames);
-
-                Console.WriteLine("Please enter the name of a sports team (Example: {0}). Current mascots file is {1}.", randomTeamName, mascotsFilePath);
+                
+                Console.WriteLine("Please enter the name of a sports team (Example: {0}). Current mascots file is {1}.", randomTeamName, mascotsFileName);
 
                 var nameEntered = Console.ReadLine();
 
@@ -76,7 +90,7 @@ namespace JSON_ResourceFiles
             }
 
             var mascotsFilePath = settings["MascotsFilePath"];
-            var isRelativePath = Path.IsPathRooted(mascotsFilePath);
+            var isRelativePath = !Path.IsPathRooted(mascotsFilePath);
 
             if (isRelativePath)
             {
@@ -88,46 +102,32 @@ namespace JSON_ResourceFiles
 
         private static string GetRandomElement(string[] array)
         {
+            var lowerBound = array.GetLowerBound(0);
+            var upperBound = array.GetUpperBound(0);
+            int randomIndex;
+
             lock (Lock)
             {
-                var lowerBound = array.GetLowerBound(0);
-                var upperBound = array.GetUpperBound(0);
-                var randomIndex = Random.Next(lowerBound, upperBound);
-                var randomElement = array.ElementAt(randomIndex);
-
-                return randomElement;
+                randomIndex = Random.Next(lowerBound, upperBound);
             }
+
+            return array.ElementAt(randomIndex);
         }
 
         private static Dictionary<string, string> InitializeDictionary(string jsonFilePath)
         {
-            Dictionary<string, string> dictionary = new Dictionary<string, string>();
-            var fileName = Path.GetFileName(jsonFilePath);
+            var jsonResouceService = new JsonResourceService();
+            var dictionary = jsonResouceService.GetResourceFromFile<Dictionary<string, string>>(jsonFilePath);
 
-            using (var fileStream = new FileStream(jsonFilePath, FileMode.Open))
-            using (var streamReader = new StreamReader(fileStream))
-            using (var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(streamReader.ReadToEnd())))
+            if (dictionary.Count.Equals(0))
             {
-                try
-                {
-                    var serializerSettings = new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true };
-                    var serializer = new DataContractJsonSerializer(typeof(Dictionary<string, string>), serializerSettings);
-                    var deserializedDictionary = (Dictionary<string, string>)(serializer.ReadObject(memoryStream));
-                    
-                    if (deserializedDictionary.Count.Equals(0))
-                    {
-                        EndProgram("The {0} file contains no mascot data. Program will now exit.", fileName);
-                    }
+                var fileName = Path.GetFileName(jsonFilePath);
+                var message = string.Format("The {0} file contains no mascot data.", fileName);
 
-                    dictionary = deserializedDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
-                }
-                catch
-                {
-                    EndProgram("The {0} file is not a recognizable JSON dictionary format. Program will now exit.", fileName);
-                }
+                throw new ApplicationException(message);
             }
-
-            return dictionary;
+            
+            return dictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
         }
     }
 }
