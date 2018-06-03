@@ -5,6 +5,10 @@ namespace Reflection
     [DataContract]
     class Pet
     {
+        public Pet()
+        {
+        }
+
         [DataMember]
         public string Name { get; set; }
 
@@ -27,6 +31,13 @@ namespace Reflection
                 Name.Equals(other.Name) && 
                 PetType.Equals(other.PetType) && 
                 Age.Equals(other.Age);
+        }
+        public override int GetHashCode()
+        {
+            return 
+                Name.GetHashCode() ^ 
+                PetType.GetHashCode() ^ 
+                Age.GetHashCode();
         }
     }
 }
