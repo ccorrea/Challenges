@@ -4,6 +4,7 @@ This repository contains assorted little programming challenges, mostly written 
 
 ## Code Sample Index
 
+- **Configuration**: A .NET Frmework console application that shows how to add a custom configuration section to the App.config file.
 - **JSON-Deserialization**: A .NET Core console application that shows how to deserialize JSON using DataContract and Generics.
 - **JSON-ResourceFiles**: A .NET Framework console application that shows how to load a strings Dictionary from a JSON file.
 - **Reflection**: A .NET Framework console application that shows how compare object properties using Reflection. 
